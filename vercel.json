@@ -1,0 +1,61 @@
+{
+  "functions": {
+    "api/*.php": {
+      "runtime": "vercel-php@0.7.3"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/api/index.php"
+    },
+    {
+      "source": "/api/ddownr",
+      "destination": "/api/ddownr.php"
+    },
+    {
+      "source": "/api/facebookapi",
+      "destination": "/api/facebookapi.php"
+    },
+    {
+      "source": "/api/fdownloader",
+      "destination": "/api/fdownloader.php"
+    },
+    {
+      "source": "/api/getmyfb",
+      "destination": "/api/getmyfb.php"
+    },
+    {
+      "source": "/api/instatiktok",
+      "destination": "/api/instatiktok.php"
+    },
+    {
+      "source": "/api/metadatafb",
+      "destination": "/api/metadatafb.php"
+    }
+  ]
+}
