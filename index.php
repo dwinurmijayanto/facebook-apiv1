@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <style>
@@ -219,19 +218,18 @@ const COOKIE_KEY = 'fb_extractor_cookie';
 
 let state = { results:[], running:false, ok:0, err:0 };
 
-// ── Storage helpers ──────────────────────────────────────────────────────────
+// ── Storage helpers (localStorage — works di Vercel & semua browser) ─────────
 async function loadCookie() {
   try {
-    const r = await window.storage.get(COOKIE_KEY);
-    return r ? r.value : null;
+    return localStorage.getItem(COOKIE_KEY) || null;
   } catch { return null; }
 }
 async function setCookie(v) {
-  try { await window.storage.set(COOKIE_KEY, v); return true; }
+  try { localStorage.setItem(COOKIE_KEY, v); return true; }
   catch { return false; }
 }
 async function removeCookie() {
-  try { await window.storage.delete(COOKIE_KEY); return true; }
+  try { localStorage.removeItem(COOKIE_KEY); return true; }
   catch { return false; }
 }
 
