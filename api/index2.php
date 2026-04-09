@@ -446,9 +446,10 @@ function getFacebookVideo(string $url): array {
     ];
 
     $sdUrl = null; $hdUrl = null; $meta = [];
+    $found = false;
 
-    outer:
     foreach ($uaList as $ua) {
+        if ($found) break;
         foreach ($urlVariants as $variant) {
             dbg("Trying UA=" . substr($ua, 0, 35) . " URL=" . substr($variant, 0, 70));
             $result = tryScrapeHtml($variant, $ua);
@@ -456,13 +457,14 @@ function getFacebookVideo(string $url): array {
                 $sdUrl = $result['sd_url'];
                 $hdUrl = $result['hd_url'];
                 $meta  = $result['meta'];
+                $found = true;
                 dbg("SUCCESS: video URLs found", [
                     'via_url' => $variant,
                     'via_ua'  => substr($ua, 0, 40),
                     'sd'      => $sdUrl ? substr($sdUrl, 0, 80) : null,
                     'hd'      => $hdUrl ? substr($hdUrl, 0, 80) : null,
                 ]);
-                break outer;
+                break;
             }
         }
     }
