@@ -520,22 +520,29 @@ function getFacebookVideo(string $url): array {
 
     dbg("=== getFacebookVideo END: SUCCESS ===");
 
-    $videoUrl = $sdUrl ?? $hdUrl;
+    // Fix duration: playable_duration_in_ms returns ms (e.g. 11300 = 11s).
+    // video:duration meta returns seconds. Heuristic: >3600 almost certainly ms.
+    $durRaw = $meta['metaDuration'] ?? null;
+    $durSec = null;
+    if ($durRaw !== null) {
+        $durSec = ($durRaw > 3600) ? (int) round($durRaw / 1000) : (int) $durRaw;
+    }
+
+    // Decode HTML entities in thumbnail URL (oEmbed may return &amp; in URLs)
+    $thumb = $oembedData['thumbnail'] ?? $meta['metaThumb'] ?? null;
+    if ($thumb) $thumb = html_entity_decode($thumb, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
     return [
-        'sd_url'    => $sdUrl,
-        'hd_url'    => $hdUrl,
-        'video_url' => $videoUrl,
-        'source'    => 'oEmbed+Meta',
-        'extra'     => [
-            'title'        => $oembedData['title']     ?? $meta['metaTitle']    ?? 'Facebook Video',
-            'author'       => $oembedData['author']    ?? $meta['metaAuthor']   ?? null,
-            'thumbnail'    => $oembedData['thumbnail'] ?? $meta['metaThumb']    ?? null,
-            'duration'     => $meta['metaDuration']    ?? null,
-            'duration_fmt' => isset($meta['metaDuration']) ? formatDuration($meta['metaDuration']) : null,
-            'views'        => $meta['metaViews']        ?? null,
-            'reactions'    => $meta['metaReact']        ?? null,
-            'description'  => $meta['metaDesc']         ?? null,
+        'hd_url' => $hdUrl ?? $sdUrl,
+        'extra'  => [
+            'title'        => $oembedData['title']  ?? $meta['metaTitle']  ?? 'Facebook Video',
+            'author'       => $oembedData['author'] ?? $meta['metaAuthor'] ?? null,
+            'thumbnail'    => $thumb,
+            'duration_sec' => $durSec,
+            'duration_fmt' => $durSec ? formatDuration($durSec) : null,
+            'views'        => $meta['metaViews'] ?? null,
+            'reactions'    => $meta['metaReact'] ?? null,
+            'description'  => $meta['metaDesc']  ?? null,
         ],
     ];
 }
