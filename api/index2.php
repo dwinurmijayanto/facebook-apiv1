@@ -80,7 +80,25 @@ function extractAll(string $pattern, string $html): array {
 
 // ─── HTTP Fetch (cURL) ────────────────────────────────────────────────────────
 
+function getSafeEncoding(): string {
+    static $enc = null;
+    if ($enc !== null) return $enc;
+    $v = curl_version();
+    $supportsBrotli = (defined('CURL_VERSION_BROTLI') && ($v['features'] & CURL_VERSION_BROTLI))
+                   || str_contains(strtolower($v['version'] ?? ''), 'brotli');
+    $enc = $supportsBrotli ? '' : 'gzip, deflate';
+    return $enc;
+}
+
 function httpGet(string $url, array $headers = [], int $timeout = 25): ?array {
+    $encoding = getSafeEncoding();
+
+    // Remove any caller-supplied Accept-Encoding and inject safe value
+    $headers = array_values(array_filter($headers,
+        fn($h) => stripos($h, 'accept-encoding') !== 0
+    ));
+    $headers[] = 'Accept-Encoding: ' . $encoding;
+
     $ch = curl_init();
     curl_setopt_array($ch, [
         CURLOPT_URL            => $url,
@@ -88,11 +106,11 @@ function httpGet(string $url, array $headers = [], int $timeout = 25): ?array {
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_MAXREDIRS      => 10,
         CURLOPT_TIMEOUT        => $timeout,
-        CURLOPT_ENCODING       => '',
+        CURLOPT_ENCODING       => $encoding,
         CURLOPT_HTTPHEADER     => $headers,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_COOKIEFILE     => '',   // enable cookie engine (no file)
+        CURLOPT_COOKIEFILE     => '',
         CURLOPT_COOKIEJAR      => '',
     ]);
 
@@ -111,6 +129,12 @@ function httpGet(string $url, array $headers = [], int $timeout = 25): ?array {
 }
 
 function httpPost(string $url, string $body, array $headers = [], int $timeout = 25): ?array {
+    $encoding = getSafeEncoding();
+    $headers  = array_values(array_filter($headers,
+        fn($h) => stripos($h, 'accept-encoding') !== 0
+    ));
+    $headers[] = 'Accept-Encoding: ' . $encoding;
+
     $ch = curl_init();
     curl_setopt_array($ch, [
         CURLOPT_URL            => $url,
@@ -120,7 +144,7 @@ function httpPost(string $url, string $body, array $headers = [], int $timeout =
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_MAXREDIRS      => 5,
         CURLOPT_TIMEOUT        => $timeout,
-        CURLOPT_ENCODING       => '',
+        CURLOPT_ENCODING       => $encoding,
         CURLOPT_HTTPHEADER     => $headers,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
@@ -328,7 +352,6 @@ function tryScrapeHtml(string $url, string $ua): ?array {
     $commonHeaders = [
         'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Accept-Language: en-US,en;q=0.9',
-        'Accept-Encoding: gzip, deflate, br',
         'Connection: keep-alive',
         'Upgrade-Insecure-Requests: 1',
         'Sec-Fetch-Dest: document',
